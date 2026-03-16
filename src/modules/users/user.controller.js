@@ -33,10 +33,20 @@ const updateProfile = async (req, res) => {
 
     // findByIdAndUpdate with runValidators ensures schema rules are enforced
     // (e.g. enum values, min/max) on update, not just on create
-    const user = await User.findByIdAndUpdate(req.user._id, updates, {
-      new: true, // return the updated document
-      runValidators: true, // run schema validators on the update
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    Object.keys(updates).forEach((key) => {
+      user[key] = updates[key];
     });
+
+    await user.save(); // <-- triggers pre("save") hook
 
     if (!user) {
       return res.status(404).json({
@@ -207,7 +217,35 @@ const getFeed = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).select(
+      "-passwordHash -blockedUsers -deviceToken"
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to load user",
+    });
+  }
+};
+
 module.exports = {
   updateProfile,
   getFeed,
+  getUserById,
 };

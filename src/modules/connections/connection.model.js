@@ -12,6 +12,7 @@ const connectionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-connectionSchema.index({ users: 1 });
+// Prevent duplicate connections
+connectionSchema.index({ users: 1 }, { unique: true });
 
 module.exports = mongoose.model("Connection", connectionSchema);
